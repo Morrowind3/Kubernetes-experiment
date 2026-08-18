@@ -7,7 +7,7 @@ grpc::Status FatigueServiceImpl::ProcessBatch(grpc::ServerContext *context,
     if (request->samples().empty())
         return grpc::Status::OK;
 
-    //TODO: Stateleness means this batch processing leads to a build up of inaccuracies as a swing could exist between batches
+    //TODO: Statelesness means this batch processing leads to a build up of inaccuracies as a swing could exist between batches
     ////This could be accepted or resolved in the aggregator.
     double reversalPosition = 0.0;
     int prevSign = 0;
