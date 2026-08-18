@@ -25,6 +25,18 @@ spec:
           ports:
             - containerPort: 50051
               protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+            #TODO: If the server can self-recover, we can use readiness.
+#          readinessProbe:
+#            tcpSocket:
+#              port: 50051
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
       restartPolicy: Always
 
 --- #SERVICE ---
