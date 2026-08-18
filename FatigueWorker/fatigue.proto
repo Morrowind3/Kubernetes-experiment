@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package fatigue_worker;
+
+option go_package = "Kubernetes2/FatigueWorker;fatigue";
+
+// Unary service. We process one data batch, and respond the output of our calculation.
+service FatigueService {
+    rpc ProcessBatch(PressDataBatch) returns (Fatigue);
+}
+
+message PressDataSample {
+    double position = 1;
+    double velocity = 2;
+}
+
+message PressDataBatch {
+    repeated PressDataSample samples = 1;
+}
+
+message Fatigue {
+    float batch_wear = 1;
+}
