@@ -60,7 +60,8 @@ int main() {
         //This thread starts the gRPC server. It'll keep running on Wait() and listen for calls to the functions in press_sim_service.cpp.
         //We need to kill the server from outside the thread (to exit Wait()).
         grpc::ServerBuilder builder;
-        builder.AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials());
+        //"InsecureServerCredentials" means no TLS. It's fine here as it's not exposed (ClusterIP) and the data isn't sensitive. 
+        builder.AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials()); 
         builder.RegisterService(&grpcService);
         const std::unique_ptr server(builder.BuildAndStart());
         if (!server) {
@@ -74,7 +75,7 @@ int main() {
 
     grpc::Server* server = serverFuture.get();
     if (!server) {
-        running = false;
+        running = false; //TODO: Exit error codes
     }
 
     const double dt = std::chrono::duration<double>(tickInterval).count();
