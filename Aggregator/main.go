@@ -50,6 +50,7 @@ func streamMetrics(ctx context.Context, client press.PressSimServiceClient, batc
 	}
 
 	currentBatch := &fatigue.PressDataBatch{}
+	currentBatch.HasPrevSample = false
 	for {
 		metrics, err := stream.Recv()
 		if err != nil {
@@ -68,14 +69,18 @@ func streamMetrics(ctx context.Context, client press.PressSimServiceClient, batc
 		currentBatch.Samples = append(currentBatch.Samples, sample)
 
 		if len(currentBatch.Samples) >= batchSize {
+			var lastSample = currentBatch.Samples[len(currentBatch.Samples)-1]
 			batchChan <- currentBatch
-			currentBatch = &fatigue.PressDataBatch{}
+			currentBatch = &fatigue.PressDataBatch{
+				HasPrevSample:       true,
+				PrevBatchLastSample: lastSample,
+			}
 		}
 	}
 }
 
 // Pull metric batches and assign to a worker, then put the calculated wear on the result channel
-func fatigueWorker(ctx context.Context, client fatigue.FatigueServiceClient, batchChan <-chan *fatigue.PressDataBatch, resultChan chan<- float32) {
+func fatigueWorker(ctx context.Context, client fatigue.FatigueServiceClient, batchChan <-chan *fatigue.PressDataBatch, resultChan chan<- float64) {
 	for batch := range batchChan {
 		response, err := client.ProcessBatch(ctx, batch)
 		if err != nil {
@@ -93,7 +98,7 @@ func fatigueWorker(ctx context.Context, client fatigue.FatigueServiceClient, bat
 // The tracker is the owner of the accumulated total.
 // Other goroutines may only mutate it via channels
 // These channels prevent data races as channels internally queue them up.
-func totalTracker(resultChan <-chan float32) {
+func totalTracker(resultChan <-chan float64) {
 	var total float64
 
 	for wear := range resultChan {
@@ -131,7 +136,7 @@ func main() {
 	fatigueClient := fatigue.NewFatigueServiceClient(fatigueConn)
 
 	batchChan := make(chan *fatigue.PressDataBatch, batchChannelBuffer)
-	resultChan := make(chan float32)
+	resultChan := make(chan float64)
 
 	go streamMetrics(ctx, pressClient, batchChan)
 

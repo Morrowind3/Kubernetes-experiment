@@ -1,44 +1,33 @@
 #include "fatigue_service.h"
 
+/* NOTE: ** Lesson worth documenting for future reference **
+Initially this used a highly simplified rainflow counting algorithm to more closely mimick real fatigue tracking.
+It means fatigue is measured at each reversal about the squared displacement during the prior half-cycle.
+A worker doesn't need state to process a batch like this. We can have many worker pods and each can do their job and stand in for one another.
+However, when designing for parallelism, what's also important is that our input and output is stateless:
+In this case, some state ended up being relevant for the batch: it could be mid-swing, and then relevant data would be hidden somewhere in a previous batch, or lost between batches.
+In fact, this problem is common enough, that the absence of that problem is known as "Embarrassingly parallel".
+Resolving that would require trickery that would distract from the goal of this project, but it shows it's something you'll often need to account for.
+Bottom line: Statelessness of a worker isn't a property of the worker in isolation that doesn't keep state, but describes its relationship to the surrounding system.
+*/
 
-
+//Wear increases exponentially with movement speed, disregarding distance travelled.
+//This approach measures per two adjacent samples, which is easier to scale horizontally (see above note).
 grpc::Status FatigueServiceImpl::ProcessBatch(grpc::ServerContext *context,
     const fatigue_worker::PressDataBatch *request, fatigue_worker::Fatigue *response) {
     if (request->samples().empty())
         return grpc::Status::OK;
 
-    //TODO: Statelesness means this batch processing leads to a build up of inaccuracies as a swing could exist between batches
-    ////This could be accepted or resolved in the aggregator.
-    double reversalPosition = 0.0;
-    int prevSign = 0;
-    float fatigue = 0.0f; //Arbitrary, material-agnostic "Wear units"
+    double fatigue = 0;
+    const auto& samples = request->samples();
 
-    //ultra-simplified rainflow fatigue counting
-    //Each half-cycle (velocity sign reversal) is weighted by distance travelled.
-    //stop/start friction and stiction at zero-velocity are deliberately not modelled here.
-    bool firstRun = true;
-    for (const auto& sample : request->samples()) {
-        const auto& velocity = sample.velocity();
-        const auto& position = sample.position();
-        const auto sign = GetSign(velocity);
-
-        //Stop/start friction is deliberately left out of the model.
-        if (sign == 0)
-            continue;
-
-        if (firstRun) {
-            prevSign = GetSign(velocity);
-            reversalPosition = position;
-            firstRun = false;
-        }
-
-        if (sign != prevSign) {
-            const double magnitude = std::pow(position - reversalPosition, 2);
-            reversalPosition = position;
-            fatigue += static_cast<float>(magnitude);
-            prevSign = sign;
-        }
+    if (request->has_prev_sample()) {
+        fatigue += std::pow(samples[0].position() - request->prev_batch_last_sample().position(), 2);
     }
+    for(int i = 1; i < samples.size(); ++i) {
+        fatigue += std::pow(samples[i].position() - samples[i - 1].position(), 2);
+    }
+
     response->set_batch_wear(fatigue);
     return grpc::Status::OK;
 }

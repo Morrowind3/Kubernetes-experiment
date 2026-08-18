@@ -1,6 +1,6 @@
 #ifndef FATIGUEWORKER_FATIGUE_SERVICE_H
 #define FATIGUEWORKER_FATIGUE_SERVICE_H
-#include "fatigue.grpc.pb.h"
+#include <fatigue.grpc.pb.h>
 
 
 class FatigueServiceImpl final : public fatigue_worker::FatigueService::Service {
