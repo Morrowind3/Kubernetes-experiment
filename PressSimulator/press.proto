@@ -1,0 +1,35 @@
+edition = "2024";
+
+package press_simulator;
+
+import "google/protobuf/empty.proto";
+
+
+option go_package = "Kubernetes2/PressSimulator;press";
+
+service PressSimService {
+    //A server-streaming RPC to feed our press metrics to clients
+    rpc FetchMetrics(google.protobuf.Empty) returns (stream PressMetrics);
+    rpc FetchConfig(google.protobuf.Empty) returns (PressConfig);
+}
+//No service for setting the configuration. Environment variables instead guarantee
+// the properties are set once and lets the press sim maintain sole ownership of its data.
+
+enum PressState {
+    PRESS_STATE_UNKNOWN = 0;
+    EXTEND = 1;
+    HOLD = 2;
+    RETRACT = 3;
+}
+
+message PressMetrics {
+    double position = 1;
+    double velocity = 2;
+    PressState state = 3;
+}
+
+message PressConfig {
+    double max_depth = 1;
+    double speed = 2;
+    uint32 dwell_duration = 3;
+ }
