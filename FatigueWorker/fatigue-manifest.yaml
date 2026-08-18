@@ -1,0 +1,41 @@
+
+# --- DEPLOYMENT ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fatigue-deployment
+  labels:
+    app: fatigue
+spec:
+  replicas: 3
+  # Selector: How to find which pods to manage.
+  selector:
+    matchLabels:
+      app: fatigue
+  # Template: Describes what a pod looks like.
+  template:
+    metadata:
+      labels:
+        app: fatigue
+    spec:
+      containers:
+        - name: fatigue
+          image: k8s/fatigue:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 50052
+              protocol: TCP
+      restartPolicy: Always
+
+--- #SERVICE ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fatigue-service
+spec:
+  selector:
+    app: fatigue
+  ports:
+    - protocol: TCP
+      port: 50052
+      targetPort: 50052

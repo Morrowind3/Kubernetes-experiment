@@ -1,0 +1,36 @@
+
+# --- DEPLOYMENT ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aggregator-deployment
+  labels:
+    app: aggregator
+spec:
+  replicas: 1
+  # Selector: How to find which pods to manage.
+  selector:
+    matchLabels:
+      app: aggregator
+  # Template: Describes what a pod looks like.
+  template:
+    metadata:
+      labels:
+        app: aggregator
+    spec:
+      containers:
+        - name: aggregator
+          image: k8s/aggregator:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: aggregator-config
+      restartPolicy: Always
+--- #ConfigMap ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aggregator-config
+data:
+  PRESS_SIM_ADDRESS: "press-sim-service:50051"
+  FATIGUE_WORKER_ADDRESS: "fatigue-service:50052"

@@ -1,0 +1,41 @@
+
+# --- DEPLOYMENT ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: press-sim-deployment
+  labels:
+    app: press-sim
+spec:
+  replicas: 1
+  # Selector: How to find which pods to manage.
+  selector:
+    matchLabels:
+      app: press-sim
+  # Template: Describes what a pod looks like.
+  template:
+    metadata:
+      labels:
+        app: press-sim
+    spec:
+      containers:
+        - name: press-sim
+          image: k8s/press:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 50051
+              protocol: TCP
+      restartPolicy: Always
+
+--- #SERVICE ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: press-sim-service
+spec:
+  selector:
+    app: press-sim
+  ports:
+    - protocol: TCP
+      port: 50051
+      targetPort: 50051
