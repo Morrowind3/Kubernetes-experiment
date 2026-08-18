@@ -35,6 +35,10 @@ add_executable(PressSimulator
     main.cpp
     ${PROTO_GENERATED_FILES}
     ${GRPC_GENERATED_FILES}
+        press_sim_service.cpp
+        press_sim_service.h
+        press_data.h
+        utils.h
 )
 
 target_include_directories(PressSimulator PRIVATE ${GENERATED_DIR} )
