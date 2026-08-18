@@ -18,6 +18,8 @@ cmake -B FatigueWorker/cmake-build-release -S FatigueWorker -DCMAKE_BUILD_TYPE=R
 cmake --build FatigueWorker/cmake-build-release
 docker build FatigueWorker/ -t k8s/fatigue
 
-
-# echo "== Building Aggregator =="
-# go build -o build/aggregator ./Aggregator
+echo "== Building Aggregator =="
+cd Aggregator
+go build
+docker build . -t k8s/aggregator
+cd ../
