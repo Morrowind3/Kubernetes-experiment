@@ -12,7 +12,7 @@ namespace PressData {
 }
 
 //Protobuf generates the client implementation (Stub/StubInterface) and handles all the plumbing.
-//Implementing the service is our responsibility and makes sure the plumbing gets the right data.
+//Implementing the service is our responsibility and makes the right data passes through the plumbing.
 class PressSimServiceImpl final : public press_simulator::PressSimService::Service {
 public:
     PressSimServiceImpl(const PressData::PressConfig& pressConfig, PressData::PressState& pressState, const std::chrono::milliseconds tickIntervalMs, const bool& applicationRunning)

@@ -8,12 +8,10 @@ import "google/protobuf/empty.proto";
 option go_package = "Kubernetes2/PressSimulator;press";
 
 service PressSimService {
-    //A server-streaming RPC to feed our press metrics to clients
+    //A server-streaming RPC to feed our press metrics to the client (go aggregator)
     rpc FetchMetrics(google.protobuf.Empty) returns (stream PressMetrics);
     rpc FetchConfig(google.protobuf.Empty) returns (PressConfig);
 }
-//No service for setting the configuration. Environment variables instead guarantee
-// the properties are set once and lets the press sim maintain sole ownership of its data.
 
 enum PressState {
     PRESS_STATE_UNKNOWN = 0;
