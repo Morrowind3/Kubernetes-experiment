@@ -1,11 +1,14 @@
-cmake_minimum_required(VERSION 4.3)
+cmake_minimum_required(VERSION 3.25.1)
 project(PressSimulator)
 
 set(CMAKE_CXX_STANDARD 20)
 
 
 # set up protocol buffer codegen
-find_package(Protobuf CONFIG REQUIRED)
+find_package(Protobuf CONFIG QUIET)
+if (NOT Protobuf_FOUND)
+    find_package(Protobuf REQUIRED)
+endif()
 find_package(gRPC CONFIG REQUIRED)
 
 set(PROTO_FILE ${CMAKE_SOURCE_DIR}/press.proto)
