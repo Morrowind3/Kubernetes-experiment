@@ -25,7 +25,7 @@ FROM debian:bookworm-slim AS runtime
 
 # install runtime deps
 RUN apt-get update && apt-get install -y \
-    libgrpc++1 \
+    libgrpc++1.51 \
     libprotobuf32 \
     && rm -rf /var/lib/apt/lists/*
 
