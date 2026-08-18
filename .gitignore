@@ -3,3 +3,7 @@
 
 #artifacts
 */cmake-build*
+*/build/*
+
+#Generated Go protobuf files
+*.pb.go

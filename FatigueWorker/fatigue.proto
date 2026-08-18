@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package fatigue_worker;
 
-option go_package = "Kubernetes2/FatigueWorker;fatigue";
+option go_package = "Kubernetes2/Aggregator/protobuf/fatigue";
 
 // Unary service. We process one data batch, and respond the output of our calculation.
 service FatigueService {

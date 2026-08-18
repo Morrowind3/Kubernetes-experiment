@@ -5,7 +5,7 @@ package press_simulator;
 import "google/protobuf/empty.proto";
 
 
-option go_package = "Kubernetes2/PressSimulator;press";
+option go_package = "Kubernetes2/Aggregator/protobuf/press";
 
 service PressSimService {
     //A server-streaming RPC to feed our press metrics to the client (go aggregator)

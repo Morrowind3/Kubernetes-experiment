@@ -3,7 +3,6 @@ project(FatigueWorker)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# TODO: Can we do (some of) this top-level instead of repeating it every time we need protobuf?
 # set up protocol buffer codegen
 find_package(Protobuf CONFIG QUIET)
 if (NOT Protobuf_FOUND)
