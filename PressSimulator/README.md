@@ -7,5 +7,3 @@ Try it with the following commands while the docker container is running on your
 
 grpcurl -plaintext -proto press.proto -import-path . localhost:50051 press_simulator.PressSimService/FetchMetrics
 grpcurl -plaintext -proto press.proto -import-path . localhost:50051 press_simulator.PressSimService/FetchConfig
-
-Sugoi, ne?!

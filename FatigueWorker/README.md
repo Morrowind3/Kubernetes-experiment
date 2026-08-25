@@ -67,6 +67,3 @@ grpcurl -plaintext --emit-defaults  -proto fatigue.proto -import-path . -d '{
 }' localhost:50052 fatigue_worker.FatigueService/ProcessBatch
 
 Result should be 0.
-
-
-TODO: Write a unit test for this
