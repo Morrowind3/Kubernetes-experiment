@@ -1,0 +1,10 @@
+#build artifacts
+build/
+generated/
+
+#CMake build artifacts
+CMakeFiles/
+cmake-build-*/
+cmake_install.cmake
+CMakeCache.txt
+CMakeUserPresers.json

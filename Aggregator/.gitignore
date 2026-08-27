@@ -1,0 +1,5 @@
+#Generated Go protobuf files
+protobuf/*/*.pb.go
+
+#Go binaries
+Aggregator

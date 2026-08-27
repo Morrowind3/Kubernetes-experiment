@@ -2,35 +2,34 @@
 # ---- Build stage ----
 FROM debian:bookworm AS build
 
-# install compile deps
+# install conan
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
-    protobuf-compiler \
-    protobuf-compiler-grpc \
-    libgrpc++-dev \
-    libprotobuf-dev \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --break-system-packages conan
 
 # Copy source to container
 WORKDIR /src
 COPY . .
 
-# parallel-build source
-RUN cmake -B build -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build build --target PressSimulator -j"$(nproc)"
+# parallel-build source statically
+RUN conan profile detect --force && \
+    conan install . --build=missing \
+        -s build_type=Release \
+        -o "*:shared=False" && \
+    cmake --preset conan-release && \
+    cmake --build --preset conan-release --target PressSimulator -j"$(nproc)"
 
 # ---- Runtime stage ----
 FROM debian:bookworm-slim AS runtime
 
-# install runtime deps
-RUN apt-get update && apt-get install -y \
-    libgrpc++1.51 \
-    libprotobuf32 \
-    && rm -rf /var/lib/apt/lists/*
 
 # copy built binaries to bin
-COPY --from=build /src/build/PressSimulator /usr/local/bin/press_simulator
+COPY --from=build /src/build/Release/PressSimulator /usr/local/bin/press_simulator
 
 EXPOSE 50051
 

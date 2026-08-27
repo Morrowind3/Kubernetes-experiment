@@ -4,15 +4,13 @@ project(PressSimulator)
 set(CMAKE_CXX_STANDARD 20)
 
 
-# set up protocol buffer codegen
-find_package(Protobuf CONFIG QUIET)
-if (NOT Protobuf_FOUND)
-    find_package(Protobuf REQUIRED)
-endif()
-find_package(gRPC CONFIG REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(gRPC REQUIRED)
+find_package(prometheus-cpp REQUIRED)
 
 set(PROTO_FILE ${CMAKE_SOURCE_DIR}/press.proto)
-set(GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
+set(GENERATED_DIR ${CMAKE_SOURCE_DIR}/generated)
+
 file(MAKE_DIRECTORY ${GENERATED_DIR})
 
 #generate messages
@@ -34,15 +32,14 @@ protobuf_generate(
     GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
 )
 
-add_executable(PressSimulator 
+add_executable(PressSimulator
     main.cpp
     ${PROTO_GENERATED_FILES}
     ${GRPC_GENERATED_FILES}
-        press_sim_service.cpp
-        press_sim_service.h
         press_data.h
         utils.h
+        press_sim_service.cpp
 )
 
 target_include_directories(PressSimulator PRIVATE ${GENERATED_DIR} )
-target_link_libraries(PressSimulator PRIVATE protobuf::libprotobuf gRPC::grpc++)
+target_link_libraries(PressSimulator PRIVATE protobuf::libprotobuf gRPC::grpc++ prometheus-cpp::pull)

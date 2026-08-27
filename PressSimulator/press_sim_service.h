@@ -1,9 +1,7 @@
-//
-// Created by harleyr on 15-08-2026.
-//
-
 #ifndef PRESSSIMULATOR_GRPCSERVICE_H
 #define PRESSSIMULATOR_GRPCSERVICE_H
+
+#include <grpcpp/grpcpp.h>
 #include "press.grpc.pb.h"
 
 namespace PressData {
@@ -19,9 +17,9 @@ public:
         : _pressState(pressState), _pressConfig(pressConfig), _tickIntervalMs(tickIntervalMs), _applicationRunning(applicationRunning){
     };
 
-    grpc::Status FetchMetrics(grpc::ServerContext* context,
-                               const google::protobuf::Empty* request,
-                               grpc::ServerWriter<press_simulator::PressMetrics>* writer) override;
+    grpc::Status FetchMetrics(grpc::ServerContext *context,
+                              const google::protobuf::Empty *request,
+                              grpc::ServerWriter<press_simulator::PressMetrics> *writer) override;
 
     grpc::Status FetchConfig(grpc::ServerContext* context,
                             const google::protobuf::Empty* request,

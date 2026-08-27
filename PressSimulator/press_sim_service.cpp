@@ -1,12 +1,7 @@
-//
-// Created by harleyr on 15-08-2026.
-//
-
 #include "press_sim_service.h"
-
 #include <thread>
-
 #include "press_data.h"
+
 
 grpc::Status PressSimServiceImpl::FetchMetrics(grpc::ServerContext *context, const google::protobuf::Empty*,
                                                grpc::ServerWriter<press_simulator::PressMetrics> *writer) {
@@ -33,7 +28,7 @@ grpc::Status PressSimServiceImpl::FetchMetrics(grpc::ServerContext *context, con
     return grpc::Status::OK;
 }
 
-grpc::Status PressSimServiceImpl::FetchConfig(grpc::ServerContext *context, const google::protobuf::Empty *request,
+grpc::Status PressSimServiceImpl::FetchConfig(grpc::ServerContext*, const google::protobuf::Empty*,
     press_simulator::PressConfig *response) {
     response->set_dwell_duration(_pressConfig.dwellDuration);
     response->set_max_depth(_pressConfig.maxDepth);

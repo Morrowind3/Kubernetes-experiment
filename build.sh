@@ -9,14 +9,22 @@ protoc --go_out=. --go_opt=module=Kubernetes2 \
        -I. PressSimulator/press.proto FatigueWorker/fatigue.proto
 
 echo "== Building PressSimulator =="
-cmake -B PressSimulator/cmake-build-release -S PressSimulator -DCMAKE_BUILD_TYPE=Release
-cmake --build PressSimulator/cmake-build-release
-docker build PressSimulator/ -t k8s/press
+cd PressSimulator
+conan install . --build=missing
+cmake --preset conan-release
+cmake --build --preset conan-release
+docker build . -t k8s/press
+cd ../
+
 
 echo "== Building FatigueWorker =="
-cmake -B FatigueWorker/cmake-build-release -S FatigueWorker -DCMAKE_BUILD_TYPE=Release
-cmake --build FatigueWorker/cmake-build-release
-docker build FatigueWorker/ -t k8s/fatigue
+cd FatigueWorker
+conan install . --build=missing
+cmake --preset conan-release
+cmake --build --preset conan-release
+docker build . -t k8s/fatigue
+
+cd ../
 
 echo "== Building Aggregator =="
 cd Aggregator

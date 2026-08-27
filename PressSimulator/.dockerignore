@@ -1,0 +1,5 @@
+build/
+CMakeUserPresets.json
+CMakeFiles/
+cmake-build-*/
+generated/

@@ -1,0 +1,14 @@
+[requires]
+grpc/1.83.0
+protobuf/6.33.5
+prometheus-cpp/1.3.0
+
+[tool_requires]
+protobuf/6.33.5
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout

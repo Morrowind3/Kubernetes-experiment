@@ -3,15 +3,14 @@ project(FatigueWorker)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# set up protocol buffer codegen
-find_package(Protobuf CONFIG QUIET)
-if (NOT Protobuf_FOUND)
-    find_package(Protobuf REQUIRED)
-endif()
-find_package(gRPC CONFIG REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(gRPC REQUIRED)
+find_package(prometheus-cpp REQUIRED)
+
 
 set(PROTO_FILE ${CMAKE_SOURCE_DIR}/fatigue.proto)
-set(GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
+set(GENERATED_DIR ${CMAKE_SOURCE_DIR}/generated)
+
 file(MAKE_DIRECTORY ${GENERATED_DIR})
 
 #generate messages
@@ -24,7 +23,7 @@ protobuf_generate(
 )
 #generate services
 protobuf_generate(
-    LANGUAGE grpc #Not a language, just ugly API design. This gets inserted in --<LANGUAGE>_out
+    LANGUAGE grpc
     OUT_VAR GRPC_GENERATED_FILES
     PROTOS ${PROTO_FILE}
     IMPORT_DIRS ${CMAKE_SOURCE_DIR}
@@ -43,4 +42,4 @@ add_executable(FatigueWorker
 )
 
 target_include_directories(FatigueWorker PRIVATE ${GENERATED_DIR} )
-target_link_libraries(FatigueWorker PRIVATE protobuf::libprotobuf gRPC::grpc++)
+target_link_libraries(FatigueWorker PRIVATE protobuf::libprotobuf gRPC::grpc++ prometheus-cpp::pull)
