@@ -2,7 +2,6 @@
 #include <thread>
 #include "press_data.h"
 
-
 grpc::Status PressSimServiceImpl::FetchMetrics(grpc::ServerContext *context, const google::protobuf::Empty*,
                                                grpc::ServerWriter<press_simulator::PressMetrics> *writer) {
     press_simulator::PressMetrics metrics;

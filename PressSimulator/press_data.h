@@ -6,7 +6,7 @@
 #include "utils.h"
 
 namespace PressData {
-    enum class State {
+    enum class State : uint8_t {
         Extend,
         Hold,
         Retract,

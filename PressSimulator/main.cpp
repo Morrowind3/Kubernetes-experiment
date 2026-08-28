@@ -5,10 +5,16 @@
 #include <future>
 #include <grpcpp/grpcpp.h>
 
+#include <prometheus/gauge.h>
+#include <prometheus/exposer.h>
+#include <prometheus/registry.h>
+
 #include "press_data.h"
 #include "press_sim_service.h"
 
 constexpr int DEFAULT_TICK_INTERVAL_MS = 100;
+static std::atomic<bool> running{true};
+
 namespace {
     void RunCycle(const PressData::PressConfig& pressConfig, PressData::PressState& pressState, const double dt) {
         switch (pressState.state) {
@@ -37,11 +43,28 @@ namespace {
                     pressState.state = PressData::State::Extend;
                 }
                 break;
-        }
-    }
-}
+        };
+    };
 
-static std::atomic<bool> running{true};
+    //This thread starts the gRPC server. It'll keep running on Wait() and listen for calls to the functions in press_sim_service.cpp.
+    void grpcServerFunc(std::promise<grpc::Server*>&& serverPromise, const PressData::PressConfig& config, PressData::PressState& state, const std::chrono::milliseconds& tickInterval) {
+            PressSimServiceImpl grpcService(config, state, tickInterval, running);
+            grpc::ServerBuilder builder;
+            //"InsecureServerCredentials" means no TLS. It's fine here as it's not exposed (ClusterIP) and the data isn't sensitive. 
+            builder.AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials()); 
+            builder.RegisterService(&grpcService);
+            const std::unique_ptr server(builder.BuildAndStart());
+            if (!server) {
+                std::cerr << "Failed to start server" << std::endl;
+                serverPromise.set_value(nullptr);
+                return;
+            }
+            serverPromise.set_value(server.get());
+            //Blocking, we need to kill the server from outside the thread.
+            server->Wait();
+    }
+};
+
 int main() {
     const PressData::PressConfig config;
     PressData::PressState state;
@@ -53,36 +76,47 @@ int main() {
     std::signal(SIGINT, ShutdownHandler);
     std::signal(SIGTERM, ShutdownHandler);
 
-    PressSimServiceImpl grpcService(config, state, tickInterval, running);
-    std::promise<grpc::Server*> serverPromise;
-    std::future<grpc::Server*> serverFuture = serverPromise.get_future();
-    std::thread serverThread([&serverPromise, &grpcService] {
-        //This thread starts the gRPC server. It'll keep running on Wait() and listen for calls to the functions in press_sim_service.cpp.
-        //We need to kill the server from outside the thread (to exit Wait()).
-        grpc::ServerBuilder builder;
-        //"InsecureServerCredentials" means no TLS. It's fine here as it's not exposed (ClusterIP) and the data isn't sensitive. 
-        builder.AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials()); 
-        builder.RegisterService(&grpcService);
-        const std::unique_ptr server(builder.BuildAndStart());
-        if (!server) {
-            std::cerr << "Failed to start server" << std::endl;
-            serverPromise.set_value(nullptr);
-            return;
-        }
-        serverPromise.set_value(server.get());
-        server->Wait();
-    });
+    std::promise<grpc::Server*> mv_serverPromise;
+    std::future<grpc::Server*> serverFuture = mv_serverPromise.get_future();
+    std::thread serverThread(grpcServerFunc, std::move(mv_serverPromise), std::ref(config), std::ref(state), tickInterval);
 
     grpc::Server* server = serverFuture.get();
     if (!server) {
         running = false; //TODO: Exit error codes
     }
 
+    //prometheus server
+    prometheus::Exposer exposer{"0.0.0.0:9090"};
+    std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
+
+    auto& positionGauge = prometheus::BuildGauge()
+                              .Name("press_position_mm")
+                              .Help("Current position of the press in mm")
+                              .Register(*registry)
+                              .Add({});
+    auto& velocityGauge = prometheus::BuildGauge()
+                              .Name("press_velocity_mm_per_s")
+                              .Help("Current velocity of the press in mm/s")
+                              .Register(*registry)
+                              .Add({});
+    auto& stateGauge = prometheus::BuildGauge()
+                              .Name("press_state")
+                              .Help("Current state of the press (0=Extend, 1=Hold, 2=Retract)")
+                              .Register(*registry)
+                              .Add({});
+    
+    exposer.RegisterCollectable(registry);
+
+
     const double dt = std::chrono::duration<double>(tickInterval).count();
     while (running) {
-        state.mutex.lock();
-        RunCycle(config, state, dt);
-        state.mutex.unlock();
+        {
+            std::scoped_lock lock(state.mutex);
+            RunCycle(config, state, dt);
+            positionGauge.Set(state.position);
+            velocityGauge.Set(state.velocity);
+            stateGauge.Set(static_cast<double>(static_cast<uint8_t>(state.state)));
+        }
 
         std::cout << "[" << StateToString(state.state) << "] "
                   << "position=" << state.position << "mm "
