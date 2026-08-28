@@ -5,8 +5,6 @@
 * kubectl
 * A kubernetes cluster e.g. Kind
 
-Run commands (for Kind): 
-
 # Run instructions for Kind 
 
 1. Create a cluster for this project if needed*
