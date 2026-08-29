@@ -89,7 +89,7 @@ func fatigueWorker(ctx context.Context, client fatigue.FatigueServiceClient, bat
 			} else {
 				log.Printf("error processing batch: %v", err)
 			}
-			continue
+			continue //TODO: A batch is dropped in this case. It's worth making a metric out of this. 
 		}
 		resultChan <- response.GetBatchWear()
 	}
@@ -109,7 +109,7 @@ func totalTracker(resultChan <-chan float64) {
 	fmt.Printf("final total wear: %f\n", total)
 }
 
-func main() {
+func run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -122,13 +122,13 @@ func main() {
 
 	pressConn, err := grpc.NewClient(pressSimAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Failed to connect to press simulator: %v", err)
+		return fmt.Errorf("Failed to configure connection to press simulator: %w", err)
 	}
 	defer pressConn.Close()
 
 	fatigueConn, err := grpc.NewClient(fatigueWorkerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Failed to connect to fatigue worker: %v", err)
+		return fmt.Errorf("Failed to configure connection to fatigue worker: %w", err)
 	}
 	defer fatigueConn.Close()
 
@@ -147,6 +147,8 @@ func main() {
 		})
 	}
 
+	//-- Cleanup --
+
 	//Close the result channel once every worker goroutine finishes (which they will once the batches stop)
 	go func() {
 		workerWg.Wait()
@@ -156,4 +158,11 @@ func main() {
 	//Runs until the results channel finishes
 	totalTracker(resultChan)
 	log.Println("aggregator shutting down")
+	return nil;
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
