@@ -22,6 +22,11 @@ spec:
         - name: fatigue
           image: k8s/fatigue:latest
           imagePullPolicy: Never
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
           ports:
             - containerPort: 50052
               protocol: TCP
@@ -41,6 +46,9 @@ metadata:
 spec:
   selector:
     app: fatigue
+  # gRPC needs to keep the connection alive, so letting kubernetes point to a pod pins us to one pod (no concurrency).
+  # Instead we should get the IPs and round-robin them ourselves.  
+  clusterIP: None 
   ports:
     - protocol: TCP
       port: 50052

@@ -136,7 +136,10 @@ func run() error {
 	}
 	defer pressConn.Close()
 
-	fatigueConn, err := grpc.NewClient(fatigueWorkerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	fatigueConn, err := grpc.NewClient("dns:///"+fatigueWorkerAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`))
+
 	if err != nil {
 		return fmt.Errorf("Failed to configure connection to fatigue worker: %w", err)
 	}
