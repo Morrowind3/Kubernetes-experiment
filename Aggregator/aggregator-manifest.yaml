@@ -34,3 +34,4 @@ metadata:
 data:
   PRESS_SIM_ADDRESS: "press-sim-service:50051"
   FATIGUE_WORKER_ADDRESS: "fatigue-service:50052"
+  NUM_WORKER_GOROUTINES: "3"

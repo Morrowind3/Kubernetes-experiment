@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 
@@ -19,7 +20,7 @@ import (
 	press "Kubernetes2/Aggregator/protobuf/press"
 )
 
-func getEnvOrDefault(key, defaultVal string) string {
+func getEnvOrDefault(key string, defaultVal string) string {
 	var envVal, found = os.LookupEnv(key)
 	if found {
 		return envVal
@@ -27,16 +28,25 @@ func getEnvOrDefault(key, defaultVal string) string {
 		return defaultVal
 	}
 }
+func getEnvOrDefaultInt(key string, defaultVal int) int {
+	var envVal, found = os.LookupEnv(key)
+	if found {
+		if i, err := strconv.Atoi(envVal); err == nil {
+			return i
+		}
+	}
+	return defaultVal
+}
 
 const (
-	batchSize           = 20
-	batchChannelBuffer  = 10
-	numWorkerGoroutines = 4
+	batchSize          = 20
+	batchChannelBuffer = 10
 )
 
 var (
 	pressSimAddress      = getEnvOrDefault("PRESS_SIM_ADDRESS", "localhost:50051")
 	fatigueWorkerAddress = getEnvOrDefault("FATIGUE_WORKER_ADDRESS", "localhost:50052")
+	numWorkerGoroutines  = getEnvOrDefaultInt("NUM_WORKER_GOROUTINES", 3)
 )
 
 // Read the metrics stream from RPC and accumulate them into batches to be sent to the batch channel.
@@ -89,7 +99,7 @@ func fatigueWorker(ctx context.Context, client fatigue.FatigueServiceClient, bat
 			} else {
 				log.Printf("error processing batch: %v", err)
 			}
-			continue //TODO: A batch is dropped in this case. It's worth making a metric out of this. 
+			continue //TODO: A batch is dropped in this case. It's worth making a metric out of this.
 		}
 		resultChan <- response.GetBatchWear()
 	}
@@ -109,7 +119,7 @@ func totalTracker(resultChan <-chan float64) {
 	fmt.Printf("final total wear: %f\n", total)
 }
 
-func run() {
+func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -158,7 +168,7 @@ func run() {
 	//Runs until the results channel finishes
 	totalTracker(resultChan)
 	log.Println("aggregator shutting down")
-	return nil;
+	return nil
 }
 
 func main() {
